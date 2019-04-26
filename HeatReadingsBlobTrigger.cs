@@ -53,9 +53,9 @@ namespace ServerlessDataPipeline
             foreach(var group in groupedDocuments)
             {
                 await timeSeriesBlobService.AppendLines(
-                    group.CustomerId,
-                    $"{group.DailyFolderPath}/{group.TimedFormatedBlobName}",
-                    group.Readings);
+                    @group.CustomerId,
+                    $"{@group.DailyFolderPath}/{@group.TimedFormatedBlobName}",
+                    @group.Readings).ConfigureAwait(false);
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Blob;
@@ -33,10 +34,13 @@ namespace Analytics.PeriodHourIngest.PeriodHourReadingsProcessorService.Services
             
             if (!exists)
             {
-                await appendBlob.CreateOrReplaceAsync();
+                await appendBlob.CreateOrReplaceAsync().ConfigureAwait(false);
             }
 
-            await appendBlob.AppendTextAsync(content);
+            using (var stream = GenerateStreamFromString(content))
+            {
+                await appendBlob.AppendBlockAsync(stream).ConfigureAwait(false);
+            }
         }
 
         private string CreateJsonLines(IEnumerable<T> lines)
@@ -48,6 +52,16 @@ namespace Analytics.PeriodHourIngest.PeriodHourReadingsProcessorService.Services
             }
 
             return appender.ToString();
+        }
+
+        public static Stream GenerateStreamFromString(string s)
+        {
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream);
+            writer.Write(s);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
         }
     }
 }
