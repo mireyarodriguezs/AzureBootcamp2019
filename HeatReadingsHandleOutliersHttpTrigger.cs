@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using DataPipeline.Functions.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -30,35 +33,23 @@ namespace ServerlessDataPipeline
             log.LogInformation("C# HTTP trigger function processed a request.");
 
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync().ConfigureAwait(false);
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            double value = data?.Value;
-            OutlierType outlierType = data?.OutlierType;
-            DateTime timeStamp = data?.Timestamp;
-
-            // Business logic to filter goes here
-            if (!ShouldAlert(outlierType, timeStamp))
-                return new OkResult();
+            var readings = JsonConvert.DeserializeObject<IEnumerable<HeatReading>>(requestBody);
 
             // Alert
-            var outlier = new Outlier
+            foreach (var reading in readings)
             {
-                ClientId = new Guid(clientId),
-                Value = value,
-                OutlierType = outlierType
-            };
-            await collector.AddAsync(outlier).ConfigureAwait(false);
+                var outlier = new Outlier
+                {
+                    ClientId = new Guid(clientId),
+                    Value = reading.Value,
+                    TimeStamp = reading.TimeStamp
+                };
+
+                // Send To ServiceBus topic
+                await collector.AddAsync(outlier).ConfigureAwait(false);
+            }
 
             return new OkObjectResult(clientId);
         }
-
-        private static bool ShouldAlert(OutlierType outlierType, DateTime timeStamp)
-        {
-            return outlierType.IsUpperOutlier() && timeStamp.Hour == PeekHour ||
-                    outlierType.IsLowerOutlier() && timeStamp.Hour == SleepHour;
-        }
-
-        public const int SleepHour = 3;
-
-        public const int PeekHour = 12;
     }
 }

@@ -19,13 +19,7 @@ namespace DataPipeline.Functions.Models
         public DateTime TimeStamp { get; set; }
 
         [DataMember(Name = "ra")]
-        public double RA { get; set; }
-
-        [DataMember(Name = "rb")]
-        public double RB { get; set; }
-
-        [DataMember(Name = "rc")]
-        public double RC { get; set; }
+        public double Value { get; set; }
     }
 
 }

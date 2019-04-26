@@ -26,7 +26,7 @@ namespace ServerlessDataPipeline
 
             var eventhubClient = configuration.InitializeFromEnvironment();
 
-            await DoRunAsync(input, log, eventhubClient);
+            await DoRunAsync(input, log, eventhubClient).ConfigureAwait(false);
         }
 
         private static async System.Threading.Tasks.Task DoRunAsync(IReadOnlyList<Document> input, ILogger log, EventHubClient eventhubClient)
@@ -41,9 +41,7 @@ namespace ServerlessDataPipeline
                     {
                         ClientId = new Guid(myDynamicDocument.ClientId),
                         TimeStamp = myDynamicDocument.TimeStamp,
-                        RA = myDynamicDocument.RA,
-                        RB = myDynamicDocument.RB,
-                        RC = myDynamicDocument.RC
+                        Value = myDynamicDocument.Value
                     };
 
                     var serializedDocument = JsonConvert.SerializeObject(heatReadingDocument, Formatting.None);
@@ -59,7 +57,7 @@ namespace ServerlessDataPipeline
                 foreach (var group in groupedEventData)
                 {
                     // batching is internally done in 20ms windows
-                    await eventhubClient.SendAsync(group.Select(e => e.eventData), group.Key);
+                    await eventhubClient.SendAsync(@group.Select(e => e.eventData), group.Key).ConfigureAwait(false);
                 }
             }
         }

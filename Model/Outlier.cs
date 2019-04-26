@@ -9,7 +9,5 @@ namespace ServerlessDataPipeline.Model
         public DateTime TimeStamp;
 
         public double Value;
-
-        public OutlierType OutlierType;
     }
 }

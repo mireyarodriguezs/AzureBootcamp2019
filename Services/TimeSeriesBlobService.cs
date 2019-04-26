@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Analytics.PeriodHourIngest.PeriodHourReadingsProcessorService.Services;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 
-namespace Analytics.PeriodHourIngest.PeriodHourReadingsProcessorService.Services
+namespace ServerlessDataPipeline.Services
 {
     public class TimeSeriesBlobService<T> : ITimeSeriesBlobService<T>
     {

@@ -24,7 +24,7 @@ namespace ServerlessDataPipeline
 
             var documentClient = conf.InitializeFromEnvironment();
 
-            await DoRun(documentClient, log);
+            await DoRun(documentClient, log).ConfigureAwait(false);
         }
 
         private static async Task DoRun(DocumentClient documentClient, ILogger log)
@@ -40,13 +40,11 @@ namespace ServerlessDataPipeline
                     {
                         ClientId = DemoClient,
                         TimeStamp = DateTimeOffset.UtcNow.Date.AddHours(-random.Next(0, 72)),
-                        RA = 10 * random.NextDouble(),
-                        RB = 10 * random.NextDouble(),
-                        RC = 100 * random.NextDouble()
-                    });
+                        Value = 10 * random.NextDouble()
+                    }).ConfigureAwait(false);
                 });
 
-            await Task.WhenAll(inserts);
+            await Task.WhenAll(inserts).ConfigureAwait(false);
         }
     }
 }
