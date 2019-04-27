@@ -16,15 +16,17 @@ namespace ServerlessDataPipeline
         public static Guid DemoClient = new Guid("3b930dcf-3cef-4964-9ebd-408f4c53ce8b");
 
         [FunctionName("HeatReadingsIngestorTimeTrigger")]
-        public static async Task RunAsync([TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, ILogger log)
+        public static async Task RunAsync(
+            [TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, 
+            ILogger log,
+            [CosmosDB(
+                databaseName: Constants.CosmosDbDatabaseName,
+                collectionName: Constants.CosmosDbCollectionName,
+                ConnectionStringSetting = Constants.CosmosHourlyDataReadWriteConnectionString)] DocumentClient client)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
-            var conf = new CosmosDBConfiguration();
-
-            var documentClient = conf.InitializeFromEnvironment();
-
-            await DoRun(documentClient, log).ConfigureAwait(false);
+            await DoRun(client, log).ConfigureAwait(false);
         }
 
         private static async Task DoRun(DocumentClient documentClient, ILogger log)

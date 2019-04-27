@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -15,14 +16,16 @@ namespace ServerlessDataPipeline
 {
     public static class HeatReadingsBlobTrigger
     {
-        private static HttpClient httpClient = new HttpClient();
+        private static readonly HttpClient httpClient = new HttpClient();
 
         [FunctionName("HeatReadingsBlobTrigger")]
         public static async Task RunAsync(
-            [BlobTrigger("eh-hourly-data/{name}", Connection = "BlobStorageConnectionString")]Stream myBlobStream,
+            [BlobTrigger("eh-hourly-data/{name}", Connection = "BlobStorageConnectionString")] Stream myBlobStream,
             string name,
             ILogger log)
         {
+            log.LogInformation($"C# HeatReadingsBlobTrigger executed at: {DateTime.Now}");
+
             var configuration = new CloudBlobConfiguration();
             var clouldBlobClient = configuration.InitializeFromEnvironment();
 
