@@ -15,49 +15,36 @@ namespace ServerlessDataPipeline
     public static class HeatReadingsChangeFeedTrigger
     {
         [FunctionName("HeatReadingsChangeFeedTrigger")]
-        public static async System.Threading.Tasks.Task RunAsync([CosmosDBTrigger(
+        public static void Run([CosmosDBTrigger(
             databaseName: "hour-data",
             collectionName: "heat-registers",
             ConnectionStringSetting = "CosmosHourlyDataReadWriteConnectionString",
             LeaseCollectionName = "leases",
-            CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Document> input, ILogger log)
+            CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Document> input, ILogger log,
+            [EventHub("hourly-data", Connection = "EventHubConnectionString")] ICollector<EventData> outputMessages)
         {
-            var configuration = new EventHubConfiguration();
-
-            var eventhubClient = configuration.InitializeFromEnvironment();
-
-            await DoRunAsync(input, log, eventhubClient).ConfigureAwait(false);
+            log.LogInformation($"C# HeatReadingsChangeFeedTrigger executed at: {DateTime.Now}");
+            DoRun(input, log, outputMessages);
         }
 
-        private static async System.Threading.Tasks.Task DoRunAsync(IReadOnlyList<Document> input, ILogger log, EventHubClient eventhubClient)
+        private static void DoRun(IReadOnlyList<Document> input, ILogger log, ICollector<EventData> outputMessages)
         {
             if (input != null && input.Count > 0)
             {
-                var groupedEventData = input.Select(x =>
+                foreach (var x in input)
                 {
                     dynamic myDynamicDocument = x;
 
-                    var heatReadingDocument = new HeatReading
+                    var heatReading = new HeatReading
                     {
                         ClientId = new Guid(myDynamicDocument.ClientId),
                         TimeStamp = myDynamicDocument.TimeStamp,
                         Value = myDynamicDocument.Value
                     };
 
-                    var serializedDocument = JsonConvert.SerializeObject(heatReadingDocument, Formatting.None);
-
-                    return new
-                    {
-                        eventData = new EventData(Encoding.UTF8.GetBytes(serializedDocument)),
-                        partitionKey = heatReadingDocument.PartitionKey
-                    };
-                })
-                .GroupBy(x => x.partitionKey);
-
-                foreach (var group in groupedEventData)
-                {
-                    // batching is internally done in 20ms windows
-                    await eventhubClient.SendAsync(@group.Select(e => e.eventData), group.Key).ConfigureAwait(false);
+                    var serializedReading = JsonConvert.SerializeObject(heatReading, Formatting.None);
+                    var eventData = new EventData(Encoding.UTF8.GetBytes(serializedReading));
+                    outputMessages.Add(eventData);
                 }
             }
         }
